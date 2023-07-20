@@ -1,0 +1,22 @@
+version: '3.8'
+
+services:
+  server:
+    image: terraria-server:latest
+    build:
+      context: .
+    ports:
+      - 7777:7777/tcp
+      - 7778:7778/tcp
+      - 7779:7779/tcp
+    tty: true
+    stdin_open: true
+    restart: unless-stopped
+    user: terraria:terraria
+    volumes:
+     - ./data:/home/terraria/.local/share/Terraria
+    command: [
+      "/home/terraria/server/Linux/TerrariaServer.bin.x86_64",
+      "-config",
+      "/home/terraria/.local/share/Terraria/serverconfig.txt",
+    ]
