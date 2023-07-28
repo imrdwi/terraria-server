@@ -5,6 +5,8 @@ services:
     image: terraria-server:latest
     build:
       context: .
+      args: 
+        - SERVER_FILE=${SERVER_FILE}
     ports:
       - 7777:7777/tcp
       - 7778:7778/tcp
@@ -15,8 +17,4 @@ services:
     user: terraria:terraria
     volumes:
      - ./data:/home/terraria/.local/share/Terraria
-    command: [
-      "/home/terraria/server/Linux/TerrariaServer.bin.x86_64",
-      "-config",
-      "/home/terraria/.local/share/Terraria/serverconfig.txt",
-    ]
+     - ./scripts:/home/terraria/scripts

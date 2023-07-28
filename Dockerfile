@@ -1,36 +1,42 @@
-FROM debian:bullseye-slim
+FROM steamcmd/steamcmd:alpine-3
 
-LABEL maintainer="rizki.k@pm.me"
+# Install prerequisites
+RUN apk update \
+    && apk add --no-cache bash curl tmux libstdc++ libgcc icu-libs \
+    && rm -rf /var/cache/apk/*
 
-ARG PUID=1000
-ARG SERVER_FILE
+# Fix 32 and 64 bit library conflicts
+RUN mkdir /steamlib \
+    && mv /lib/libstdc++.so.6 /steamlib \
+    && mv /lib/libgcc_s.so.1 /steamlib
 
+ENV LD_LIBRARY_PATH /steamlib
+
+# Create tModLoader user and drop root permissions
+ARG UID
+ARG GID
+
+RUN addgroup -g $GID terraria \
+    && adduser terraria -u $UID -G terraria -h /home/terraria -D
+
+USER terraria
 ENV USER terraria
-ENV HOMEDIR "/home/${USER}"
-ENV SERVERDIR "${HOMEDIR}/server"
+ENV HOME /home/terraria
 
-RUN set -x \
-    && apt update \
-    && apt install -y curl unzip \
-    && useradd -u ${PUID} -m ${USER} \
-    && su ${USER} -c \
-        "mkdir -p ${SERVERDIR} \
-         && curl -L \
-            $( \
-                curl -sL https://terraria.fandom.com/wiki/Server | \
-                grep 'Terraria Server [0-9.]' | \
-                tail -1 | \
-                grep -oP 'href="\K[^"]+' \
-            ) > ${SERVERDIR}/server.zip \
-         && unzip ${SERVERDIR}/server.zip -d ${SERVERDIR}"
+WORKDIR $HOME
 
-USER ${USER}
+# Update SteamCMD and verify latest version
+RUN steamcmd +quit
 
-RUN set -x \
-    && cd ${SERVERDIR} \
-    && cp -rfp ./$(ls -d */)/* . \
-    && chmod +x ./Linux/TerrariaServer.bin.x86* \
-    && mkdir -p /home/terraria/.local/share/Terraria
+RUN curl -O https://raw.githubusercontent.com/tModLoader/tModLoader/1.4.4/patches/tModLoader/Terraria/release_extras/DedicatedServerUtils/manage-tModLoaderServer.sh \
+    && chmod u+x manage-tModLoaderServer.sh \
+    && ./manage-tModLoaderServer.sh -i -g --no-mods \
+    && chmod u+x $HOME/tModLoader/start-tModLoaderServer.sh
 
-WORKDIR ${HOMEDIR}
+# Download entrypoint script
+RUN curl -O https://raw.githubusercontent.com/tModLoader/tModLoader/1.4.4/patches/tModLoader/Terraria/release_extras/DedicatedServerUtils/Docker/Launch.sh \
+    && chmod u+x Launch.sh
 
+EXPOSE 7777
+
+ENTRYPOINT [ "/bin/bash", "-c", "./Launch.sh" ]
