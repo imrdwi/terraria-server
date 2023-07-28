@@ -5,8 +5,9 @@ services:
     image: terraria-server:latest
     build:
       context: .
-      args: 
-        - SERVER_FILE=${SERVER_FILE}
+      args:
+        - SERVER_FILE_URL=${SERVER_FILE_URL}
+        - TMOD_LOADER_GIT_TAG=${TMOD_LOADER_GIT_TAG}
     ports:
       - 7777:7777/tcp
       - 7778:7778/tcp
@@ -17,4 +18,3 @@ services:
     user: terraria:terraria
     volumes:
      - ./data:/home/terraria/.local/share/Terraria
-     - ./scripts:/home/terraria/scripts
